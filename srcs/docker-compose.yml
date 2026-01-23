@@ -1,0 +1,100 @@
+version: '3.8'
+
+# ============================================
+# SERVICES
+# ============================================
+services:
+  
+  # ------------------------------------------
+  # MARIADB (Base de données)
+  # ------------------------------------------
+  mariadb:
+    container_name: mariadb
+    build:
+      context: ./requirements/mariadb
+      dockerfile: Dockerfile
+    image: mariadb
+    networks:
+      - inception_network
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ------------------------------------------
+  # WORDPRESS (Application)
+  # ------------------------------------------
+  wordpress:
+    container_name: wordpress
+    build:
+      context: ./requirements/wordpress
+      dockerfile: Dockerfile
+    image: wordpress
+    networks:
+      - inception_network
+    volumes:
+      - wordpress_data:/var/www/html
+    env_file:
+      - .env
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ------------------------------------------
+  # NGINX (Serveur Web)
+  # ------------------------------------------
+  nginx:
+    container_name: nginx
+    build:
+      context: ./requirements/nginx
+      dockerfile: Dockerfile
+    image: nginx
+    networks:
+      - inception_network
+    volumes:
+      - wordpress_data:/var/www/html:ro
+    ports:
+      - "8443:443"
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    restart: unless-stopped
+    env_file:
+      - .env
+
+# ============================================
+# VOLUMES (Stockage persistant)
+# ============================================
+volumes:
+  mariadb_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/camansou/data/mariadb
+
+  wordpress_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/camansou/data/wordpress
+
+# ============================================
+# NETWORKS (Réseau)
+# ============================================
+networks:
+  inception_network:
+    driver: bridge
