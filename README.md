@@ -83,8 +83,8 @@ docker run -d \
   docker logs mariadb
 
   4. Construire l'image WordPress
-  cd ../Inception/srcs/requirements/wordpress
-  docker build -t my-wordpress .
+cd ../Inception/srcs/requirements/wordpress
+docker build -t my-wordpress .
 
   5. Lancer WordPress
   docker run -d \
@@ -106,8 +106,8 @@ docker run -d \
   my-wordpress
 
   6. Verifier logs
-  docker logs -f wordpress
-   -- A voir a la fin: 🚀 Démarrage de PHP-FPM... --
+docker logs -f wordpress
+  -- A voir a la fin: 🚀 Démarrage de PHP-FPM... --
 
   7. docker ps
    -- Devrais voir :
@@ -196,7 +196,7 @@ docker logs mariadb
 
 **WordPress**
 docker run -d \
-  --name wordpress \
+  --name wordpress \Verification 
   --network inception-net \
   --restart unless-stopped \
   --env MYSQL_DATABASE=wordpress_db \
@@ -237,4 +237,96 @@ docker logs nginx
 11. Verifier que les tables WordPress ont ete cree
   docker exec -it mariadb bash -c "mysql -u wp_user -psecure_password_123 -e 'USE wordpress_db; SHOW TABLES;'"
 
+12. Mettre a jour l'URL
+docker exec -it wordpress wp option update home 'https://localhost:8443' --allow-root
+docker exec -it wordpress wp option update siteurl 'https://localhost:8443' --allow-root
+
+13. Check si le site marche : curl -k https://localhost:8443
+allez sur le site : https://localhost:8443/
+
+
+docker compose down -v
+docker compose build --no-cache
+docker compose up --build
+
+
+# ============================================
+# SERVICES
+# ============================================
+services:
   
+  # ------------------------------------------
+  # MARIADB (Base de données)
+  # ------------------------------------------
+  mariadb:
+    container_name: mariadb
+    build:
+      context: ./requirements/mariadb
+      dockerfile: Dockerfile
+    image: mariadb
+    networks:
+      - inception_network
+    volumes:
+      - /sgoinfre/goinfre/Perso/camansou/data/mariadb:/var/lib/mysql
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "--silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ------------------------------------------
+  # WORDPRESS (Application)
+  # ------------------------------------------
+  wordpress:
+    container_name: wordpress
+    build:
+      context: ./requirements/wordpress
+      dockerfile: Dockerfile
+    image: wordpress
+    networks:
+      - inception_network
+    volumes:
+      - /sgoinfre/goinfre/Perso/camansou/data/wordpress:/var/www/html
+    env_file:
+      - .env
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ------------------------------------------
+  # NGINX (Serveur Web)
+  # ------------------------------------------
+  nginx:
+    container_name: nginx
+    build:
+      context: ./requirements/nginx
+      dockerfile: Dockerfile
+    image: nginx
+    networks:
+      - inception_network
+    volumes:
+      - /sgoinfre/goinfre/Perso/camansou/data/wordpress:/var/www/html:ro
+    ports:
+      - "443:443"
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    restart: unless-stopped
+    env_file:
+      - .env
+
+# ============================================
+# NETWORKS (Réseau)
+# ============================================
+networks:
+  inception_network:
+    driver: bridge

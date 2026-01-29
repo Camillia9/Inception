@@ -14,30 +14,30 @@ fi
 
 echo "✅ Variables d'environnement OK"
 
-# Créer le fichier marker pour vérifier si c'est la première initialisation
+# Créer le fichier marker
 MARKER_FILE="/var/lib/mysql/.initialized"
 
 if [ ! -f "$MARKER_FILE" ]; then
     echo "📦 Première initialisation détectée..."
     
-    # Arrêter MariaDB s'il tourne déjà
+    # Arrêter MariaDB s'il tourne
     service mariadb stop 2>/dev/null || true
     
-    # Nettoyer les fichiers existants
+    # Nettoyer
     rm -rf /var/lib/mysql/*
     
-    # Initialiser la structure de base de MariaDB
+    # Initialiser
     mysql_install_db --user=mysql --datadir=/var/lib/mysql > /dev/null
     
     echo "✅ Structure de base créée"
     
-    # Démarrer MariaDB temporairement
+    # Démarrer MariaDB temporairement en arrière-plan
     mysqld --user=mysql --datadir=/var/lib/mysql --skip-networking &
     MYSQL_PID=$!
     
     echo "⏳ Attente du démarrage de MariaDB..."
     
-    # Attendre que MariaDB soit prêt
+    # Attendre que MariaDB soit prêt (utilise le socket par défaut)
     for i in {30..0}; do
         if mysqladmin ping --silent 2>/dev/null; then
             break
@@ -52,8 +52,8 @@ if [ ! -f "$MARKER_FILE" ]; then
     
     echo "✅ MariaDB démarré temporairement"
     
-    # Exécuter les commandes SQL d'initialisation
-    mysql << EOF
+    # Exécuter les commandes SQL (sans spécifier de socket, utilise le défaut)
+    MYSQL_HOST="" mysql --socket=/run/mysqld/mysqld.sock << EOF
 ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';
 CREATE DATABASE IF NOT EXISTS \`${MYSQL_DATABASE}\`;
 CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
@@ -67,11 +67,11 @@ EOF
     
     echo "✅ Configuration de la base de données terminée"
     
-    # Arrêter MariaDB temporaire
-    mysqladmin shutdown 2>/dev/null || kill "$MYSQL_PID"
+    # Arrêter MariaDB
+    kill "$MYSQL_PID"
     wait "$MYSQL_PID" 2>/dev/null || true
     
-    # Créer le fichier marker
+    # Marquer comme initialisé
     touch "$MARKER_FILE"
     
     echo "✅ Base de données initialisée avec succès !"
