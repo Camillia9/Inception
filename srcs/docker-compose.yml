@@ -20,7 +20,7 @@ services:
       - .env
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "--socket=/run/mysqld/mysqld.sock", "--silent"]
+      test: ["CMD-SHELL", "test -S /run/mysqld/mysqld.sock"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -80,17 +80,17 @@ services:
 volumes:
   mariadb_data:
     driver: local
-    #driver_opts:
-    #  type: none
-    #  o: bind
-    #  device: /home/camansou/data/mariadb
+    driver_opts:
+      type: none
+      o: bind
+      device: /media/camansou/6A4CBABE4CBA847B/INCEPTION/data/mariadb
 
   wordpress_data:
     driver: local
-    #driver_opts:
-    #  type: none
-    #  o: bind
-    #  device: /home/camansou/data/wordpress
+    driver_opts:
+      type: none
+      o: bind
+      device: /media/camansou/6A4CBABE4CBA847B/INCEPTION/data/wordpress
 
 # ============================================
 # NETWORKS (Réseau)
