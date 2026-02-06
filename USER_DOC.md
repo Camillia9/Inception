@@ -32,9 +32,20 @@ make down
 docker ps
 ```
 
+## Se connecter a la base de donnees
+```
+docker exec -it mariadb mysql -u wp_user -p -D wordpress_db
+- entrer le mdp (MYSQL_PASSWORD(.env))
+- SHOW TABLES;
+verifier les utilisateurs :
+- SELECT user_login FROM wp_users;
+- exit
+```
+
 ## Consulter les logs
 ```bash
 make logs
+docker compose -f srcs/docker-compose.yml logs
 ```
 
 ## Nettoyage complet

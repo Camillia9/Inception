@@ -1,24 +1,24 @@
 #!/bin/bash
 set -eu
 
-echo "🚀 Démarrage de l'initialisation de MariaDB..."
+echo "Démarrage de l'initialisation de MariaDB..."
 
 # Vérifier les variables d'environnement
 if [ -z "${MYSQL_DATABASE}" ] || \
    [ -z "${MYSQL_USER}" ] || \
    [ -z "${MYSQL_PASSWORD}" ] || \
    [ -z "${MYSQL_ROOT_PASSWORD}" ]; then
-    echo "❌ Erreur : Variables d'environnement manquantes !"
+    echo "Erreur : Variables d'environnement manquantes !"
     exit 1
 fi
 
-echo "✅ Variables d'environnement OK"
+echo "Variables d'environnement OK"
 
 # Créer le fichier marker
 MARKER_FILE="/var/lib/mysql/.initialized"
 
 if [ ! -f "$MARKER_FILE" ]; then
-    echo "📦 Première initialisation détectée..."
+    echo "Première initialisation détectée..."
     
     # Arrêter MariaDB s'il tourne
     service mariadb stop 2>/dev/null || true
@@ -29,13 +29,13 @@ if [ ! -f "$MARKER_FILE" ]; then
     # Initialiser
     mysql_install_db --user=mysql --datadir=/var/lib/mysql > /dev/null
     
-    echo "✅ Structure de base créée"
+    echo "Structure de base créée"
     
     # Démarrer MariaDB temporairement en arrière-plan
     mysqld --user=mysql --datadir=/var/lib/mysql --skip-networking &
     MYSQL_PID=$!
     
-    echo "⏳ Attente du démarrage de MariaDB..."
+    echo "Attente du démarrage de MariaDB..."
     
     # Attendre que MariaDB soit prêt (utilise le socket par défaut)
     for i in {30..0}; do
@@ -46,11 +46,11 @@ if [ ! -f "$MARKER_FILE" ]; then
     done
     
     if [ "$i" = 0 ]; then
-        echo "❌ Erreur : MariaDB n'a pas démarré à temps"
+        echo "Erreur : MariaDB n'a pas démarré à temps"
         exit 1
     fi
     
-    echo "✅ MariaDB démarré temporairement"
+    echo "MariaDB démarré temporairement"
     
     # Exécuter les commandes SQL (sans spécifier de socket, utilise le défaut)
     MYSQL_HOST="" mysql --socket=/run/mysqld/mysqld.sock << EOF
@@ -65,7 +65,7 @@ DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';
 FLUSH PRIVILEGES;
 EOF
     
-    echo "✅ Configuration de la base de données terminée"
+    echo "Configuration de la base de données terminée"
     
     # Arrêter MariaDB
     kill "$MYSQL_PID"
@@ -74,10 +74,10 @@ EOF
     # Marquer comme initialisé
     touch "$MARKER_FILE"
     
-    echo "✅ Base de données initialisée avec succès !"
+    echo "Base de données initialisée avec succès !"
 else
-    echo "✅ Base de données déjà initialisée"
+    echo "Base de données déjà initialisée"
 fi
 
-echo "🚀 Démarrage de MariaDB en mode production..."
+echo "Démarrage de MariaDB en mode production..."
 exec mysqld --user=mysql --datadir=/var/lib/mysql --bind-address=0.0.0.0
