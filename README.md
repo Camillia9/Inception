@@ -241,8 +241,12 @@ docker logs nginx
 docker exec -it wordpress wp option update home 'https://localhost:8443' --allow-root
 docker exec -it wordpress wp option update siteurl 'https://localhost:8443' --allow-root
 
-13. Check si le site marche : curl -k https://localhost:8443
-allez sur le site : https://localhost:8443/
+13. Check si le site marche : curl -k https://localhost:443
+allez sur le site : 
+
+14. VM :
+curl -k https://camansou.42.fr
+https://camansou.42.fr
 
 
 docker compose down -v

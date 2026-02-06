@@ -4,7 +4,7 @@
 
 # Variables
 COMPOSE_FILE = srcs/docker-compose.yml
-DATA_DIR = /media/camansou/6A4CBABE4CBA847B/INCEPTION/data
+DATA_DIR = /home/camansou/data
 
 # ============================================
 # RÈGLES PRINCIPALES
@@ -40,11 +40,12 @@ fclean: clean
 	docker system prune -af
 	@if [ -d "$(DATA_DIR)/mariadb" ]; then \
 		echo "Suppression des données MariaDB..."; \
-		rm -rf $(DATA_DIR)/mariadb/*; \
+		sudo rm -rf $(DATA_DIR)/mariadb/*; \
+		sudo rm -rf $(DATA_DIR)/mariadb/.initialized; \
 	fi
 	@if [ -d "$(DATA_DIR)/wordpress" ]; then \
 		echo "Suppression des données WordPress..."; \
-		rm -rf $(DATA_DIR)/wordpress/*; \
+		sudo rm -rf $(DATA_DIR)/wordpress/*; \
 	fi
 
 # Reconstruire tout depuis zéro

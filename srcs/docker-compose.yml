@@ -66,7 +66,7 @@ services:
     volumes:
       - wordpress_data:/var/www/html:ro
     ports:
-      - "8443:443"
+      - "443:443"
     depends_on:
       wordpress:
         condition: service_healthy
@@ -83,14 +83,14 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: /media/camansou/6A4CBABE4CBA847B/INCEPTION/data/mariadb
+      device: /home/camansou/data/mariadb
 
   wordpress_data:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /media/camansou/6A4CBABE4CBA847B/INCEPTION/data/wordpress
+      device: /home/camansou/data/wordpress
 
 # ============================================
 # NETWORKS (Réseau)
