@@ -7,7 +7,7 @@ make
 ```
 
 ## Accéder à WordPress
-
+0. copier coller le .env depuis le nouveau repo de correction: cp /home/camansou/Incept/srcs/.env srcs/.env
 1. Ouvrez Firefox **dans la VM**
 2. Naviguez vers `https://camansou.42.fr`
 3. Acceptez l'avertissement de certificat SSL
