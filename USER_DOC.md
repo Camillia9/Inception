@@ -1,4 +1,5 @@
-cat > USER_DOC.md << 'EOF'
+*This project has been created as part of the 42 curriculum by camansou*
+
 # Documentation Utilisateur
 
 ## Démarrer le projet
@@ -17,10 +18,15 @@ make
 
 **URL :** https://camansou.42.fr/wp-admin
 **CURL :** curl -k https://camansou.42.fr
+**TEST PORT 80(http://)(ne devrait pas fonctionner)** : curl http://camansou.42.fr
 
 **Identifiants :**
 - Administrateur : (voir fichier .env - WP_ADMIN_USER)
 - Mot de passe : (voir fichier .env - WP_ADMIN_PASSWORD)
+
+## Mise a jour de l'URL
+docker exec -it wordpress wp option update home 'https://camansou.42.fr:8443' --allow-root
+docker exec -it wordpress wp option update siteurl 'https://camansou.42.fr:8443' --allow-root
 
 ## Arrêter le projet
 ```bash
@@ -84,5 +90,3 @@ docker logs mariadb
 docker volume ls
 docker volume inspect srcs_mariadb_data
 docker volume inspect srcs_wordpress_data
-```
-EOF

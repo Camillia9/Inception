@@ -1,4 +1,5 @@
-cat > DEV_DOC.md << 'EOF'
+*This project has been created as part of the 42 curriculum by camansou*
+
 # Documentation Développeur
 
 ## Prérequis
@@ -215,6 +216,3 @@ docker exec -it wordpress wp config get --allow-root
 ```bash
 docker network ls
 docker network inspect inception_network
-```
-EOF
-```
