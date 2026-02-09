@@ -1,1 +1,2 @@
 srcs/.env
+check_clean.sh clean_inception.sh
