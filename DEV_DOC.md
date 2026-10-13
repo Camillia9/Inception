@@ -1,29 +1,30 @@
 *This project has been created as part of the 42 curriculum by camansou*
 
-# Documentation Développeur
+# Developer Documentation
 
-## Prérequis
+## Prerequisites
 
-- Debian 11 ou Ubuntu 22.04
+- Debian 11 or Ubuntu 22.04
 - Docker Engine (version 20.10+)
 - Docker Compose plugin (version 2.0+)
 - Make
-- Au moins 2 Go RAM et 30 Go d'espace disque
+- At least 2 GB of RAM and 30 GB of disk space
 
-## Installation de l'environnement
+## Setting up the environment
 
-### Installer Docker
+### Install Docker
+
 ```bash
-# Dépendances
+# Dependencies
 sudo apt update
 sudo apt install -y ca-certificates curl gnupg
 
-# Clé GPG Docker
+# Docker GPG key
 sudo install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 sudo chmod a+r /etc/apt/keyrings/docker.gpg
 
-# Dépôt Docker
+# Docker repository
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
   $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
@@ -33,38 +34,44 @@ echo \
 sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-# Ajouter user au groupe docker
+# Add the user to the docker group
 sudo usermod -aG docker $USER
 ```
 
-### Configuration initiale
+### Initial configuration
+
 ```bash
-# Créer les répertoires de données
+# Create the data directories (also done by `make build`)
 mkdir -p ~/data/mariadb
 mkdir -p ~/data/wordpress
 
-# Créer le fichier .env (voir README.md)
+# Point the domain name to the VM
+echo "127.0.0.1 camansou.42.fr" | sudo tee -a /etc/hosts
 ```
 
-## Utilisation du Makefile
+Then create `srcs/.env` with the variables listed in [README.md](README.md#configuration). This file contains the credentials and must never be committed (it is listed in `.gitignore`).
+
+## Using the Makefile
+
 ```bash
-make        # Build et start
-make build  # Build uniquement
-make up     # Start uniquement
+make        # Build and start
+make build  # Build only
+make up     # Start only
 make down   # Stop
-make clean  # Stop + remove containers et volumes
-make fclean # Nettoyage complet
-make re     # Rebuild complet
-make logs   # Logs en temps réel
-make status # État des conteneurs
+make clean  # Stop + remove containers and Docker volumes
+make fclean # Full cleanup (images + data)
+make re     # Full rebuild
+make logs   # Live logs
+make status # Container status
 ```
 
-## Commandes Docker Compose
+## Docker Compose commands
+
 ```bash
-# Démarrer
+# Start
 docker compose -f srcs/docker-compose.yml up -d
 
-# Arrêter
+# Stop
 docker compose -f srcs/docker-compose.yml down
 
 # Logs
@@ -77,34 +84,36 @@ docker compose -f srcs/docker-compose.yml build
 docker compose -f srcs/docker-compose.yml ps
 ```
 
-## Gestion des conteneurs
+## Managing the containers
+
 ```bash
-# Accéder à un conteneur
+# Open a shell in a container
 docker exec -it nginx sh
 docker exec -it wordpress bash
 docker exec -it mariadb bash
 
-# Logs d'un service
+# Logs of a service
 docker logs nginx
-docker logs wordpress  
+docker logs wordpress
 docker logs mariadb
 
-# Inspecter
+# Inspect
 docker inspect nginx
 docker inspect wordpress
 docker inspect mariadb
 ```
 
-## Persistance des données
+## Data persistence
 
-### Emplacements
+### Locations
 
-- **MariaDB :** `/home/login/data/mariadb`
-- **WordPress :** `/home/login/data/wordpress`
+- **MariaDB:** `/home/login/data/mariadb`
+- **WordPress:** `/home/login/data/wordpress`
 
-### Stratégie
+### Strategy
 
-Les bind mounts lient les chemins des conteneurs aux répertoires hôtes :
+The project uses **named volumes** with the `local` driver and the `bind` option: Docker manages the volumes, but their data is stored in a known directory of the host.
+
 ```yaml
 volumes:
   mariadb_data:
@@ -115,104 +124,111 @@ volumes:
       device: /home/login/data/mariadb
 ```
 
-**Cycle de vie :**
-- `make down` : données **conservées**
-- `make clean` : données **supprimées**
-- `make fclean` : données **supprimées** + nettoyage Docker
+**Lifecycle:**
+- `make down`: containers removed, data **kept**
+- `make clean`: containers and Docker volumes removed, but the files in `/home/login/data` are **kept** (the volumes are only references to these directories)
+- `make fclean`: data **deleted** + images and Docker cache removed
 
-### Vérification
+### Checks
+
 ```bash
-# Lister les volumes
+# List the volumes
 docker volume ls
 
-# Inspecter un volume
+# Inspect a volume
 docker volume inspect srcs_mariadb_data
 docker volume inspect srcs_wordpress_data
 
-# Contenu des volumes
+# Volume contents
 ls -la ~/data/mariadb/
 ls -la ~/data/wordpress/
 ```
 
-## Débogage
+## Debugging
 
-### Conteneur ne démarre pas
+### A container does not start
+
 ```bash
 docker logs <container_name>
 docker inspect <container_name>
 ```
 
-### Problèmes réseau
+### Network issues
+
 ```bash
 docker network inspect inception_network
 docker exec -it wordpress ping mariadb
 docker exec -it nginx ping wordpress
 ```
 
-### Problèmes volumes
+### Volume issues
+
 ```bash
 docker volume ls
 ls -la ~/data/mariadb/
 ls -la ~/data/wordpress/
 ```
 
-### Base de données
+### Database
+
 ```bash
-# Se connecter à MariaDB
+# Connect to MariaDB
 docker exec -it mariadb mysql -u wp_user -p -D wordpress_db
 
-# Vérifier les tables
+# Check the tables
 SHOW TABLES;
 
-# Vérifier les utilisateurs WordPress
+# Check the WordPress users
 SELECT * FROM wp_users;
 ```
 
 ### WordPress
+
 ```bash
 # WP-CLI info
 docker exec -it wordpress wp --info --allow-root
 
-# Lister les utilisateurs
+# List the users
 docker exec -it wordpress wp user list --allow-root
 
-# Vérifier la config
+# Check the configuration
 docker exec -it wordpress wp config get --allow-root
 ```
 
-## Structure des Dockerfiles
+## Dockerfiles overview
 
 ### NGINX
 
-- **Base :** Alpine Linux
-- **Port :** 443 (HTTPS)
-- **SSL :** Certificat auto-signé généré au démarrage
-- **Config :** Reverse proxy vers WordPress (FastCGI)
+- **Base:** Alpine Linux
+- **Port:** 443 (HTTPS)
+- **SSL:** self-signed certificate generated at startup
+- **Config:** forwards PHP requests to WordPress (FastCGI)
 
 ### WordPress
 
-- **Base :** Debian Bullseye
-- **Port :** 9000 (PHP-FPM)
-- **Installation :** WP-CLI automatique
-- **Utilisateurs :** 2 créés au démarrage
+- **Base:** Debian Bullseye
+- **Port:** 9000 (PHP-FPM)
+- **Installation:** automatic with WP-CLI
+- **Users:** 2 created at startup
 
 ### MariaDB
 
-- **Base :** Debian Bullseye
-- **Port :** 3306 (interne uniquement)
-- **Initialisation :** Script bash au premier démarrage
-- **Persistance :** Volume bind mount
+- **Base:** Debian Bullseye
+- **Port:** 3306 (internal only)
+- **Initialization:** bash script on the first start
+- **Persistence:** named volume
 
-## Réseau Docker
+## Docker network
 
-**Type :** Bridge network (`inception_network`)
+**Type:** bridge network (`inception_network`)
 
-**Avantages :**
-- Isolation des services
-- DNS automatique par nom de conteneur
-- Sécurité (pas d'exposition au réseau hôte)
+**Advantages:**
+- Isolation of the services
+- Automatic DNS by container name
+- Security (no exposure on the host network)
 
-**Vérification :**
+**Checks:**
 ```bash
 docker network ls
 docker network inspect inception_network
+```

@@ -1,92 +1,127 @@
 *This project has been created as part of the 42 curriculum by camansou*
 
-# Documentation Utilisateur
+# User Documentation
 
-## Démarrer le projet
+## Services provided
+
+The stack runs three services, each in its own container:
+
+- **NGINX**: the only entry point, serves the website over HTTPS (port 443)
+- **WordPress**: the website and its administration panel (PHP-FPM)
+- **MariaDB**: the database that stores the WordPress content
+
+## Start the project
+
+Before the first start, create the `srcs/.env` file (see the template in [README.md](README.md#configuration)).
+
 ```bash
 make
 ```
 
-## Accéder à WordPress
-0. copier coller le .env depuis le nouveau repo de correction: cp /home/camansou/Incept/srcs/.env srcs/.env
-1. Ouvrez Firefox **dans la VM**
-2. Naviguez vers `https://camansou.42.fr`
-3. Acceptez l'avertissement de certificat SSL
-4. Connectez-vous avec vos identifiants
+## Access WordPress
 
-## Panneau d'administration
+1. Open Firefox **inside the VM**
+2. Go to `https://camansou.42.fr`
+3. Accept the SSL certificate warning (the certificate is self-signed)
+4. Log in with your credentials
 
-**URL :** https://camansou.42.fr/wp-admin
-**CURL :** curl -k https://camansou.42.fr
-**TEST PORT 80(http://)(ne devrait pas fonctionner)** : curl http://camansou.42.fr
+## Administration panel
 
-**Identifiants :**
-- Administrateur : (voir fichier .env - WP_ADMIN_USER)
-- Mot de passe : (voir fichier .env - WP_ADMIN_PASSWORD)
+**URL:** https://camansou.42.fr/wp-admin
 
-## Mise a jour de l'URL
+**Credentials:**
+- Administrator: see `WP_ADMIN_USER` in `srcs/.env`
+- Password: see `WP_ADMIN_PASSWORD` in `srcs/.env`
+
+## Test access from the command line
+
+```bash
+# HTTPS (should work)
+curl -k https://camansou.42.fr
+
+# HTTP on port 80 (should NOT work)
+curl http://camansou.42.fr
+```
+
+## Update the site URL
+
+If the site is accessed through another port (for example `8443`), update the WordPress URL:
+
+```bash
 docker exec -it wordpress wp option update home 'https://camansou.42.fr:8443' --allow-root
 docker exec -it wordpress wp option update siteurl 'https://camansou.42.fr:8443' --allow-root
+```
 
-## Arrêter le projet
+## Stop the project
+
 ```bash
 make down
 ```
 
-## Vérifier l'état des services
+The data is kept: the next `make` restarts the site as it was.
+
+## Check the services
+
 ```bash
 docker ps
+# Should list 3 containers: nginx, wordpress, mariadb
 ```
 
-## Se connecter a la base de donnees
-```
+## Connect to the database
+
+```bash
 docker exec -it mariadb mysql -u wp_user -p -D wordpress_db
-- entrer le mdp (MYSQL_PASSWORD(.env))
-- SHOW TABLES;
-verifier les utilisateurs :
-- SELECT user_login FROM wp_users;
-- exit
 ```
 
-## Consulter les logs
+- Enter the password (`MYSQL_PASSWORD` in `srcs/.env`)
+- List the tables: `SHOW TABLES;`
+- Check the WordPress users: `SELECT user_login FROM wp_users;`
+- Quit: `exit`
+
+## View the logs
+
 ```bash
 make logs
+# or
 docker compose -f srcs/docker-compose.yml logs
 ```
 
-## Nettoyage complet
-```bash
-make fclean
-```
+For a single service:
 
-**Attention :** Supprime toutes les données.
-
-## Gestion des identifiants
-
-Les identifiants sont stockés dans le fichier `srcs/.env`. Pour les modifier :
-
-1. Arrêtez le projet : `make down`
-2. Modifiez `srcs/.env`
-3. Nettoyez : `make fclean`
-4. Relancez : `make`
-
-## Vérifications de base
-
-**Services actifs :**
-```bash
-docker ps
-# Doit afficher 3 conteneurs : nginx, wordpress, mariadb
-```
-
-**Logs :**
 ```bash
 docker logs nginx
 docker logs wordpress
 docker logs mariadb
 ```
 
-**Volumes :**
+## Manage credentials
+
+The credentials are stored in `srcs/.env`. To change them:
+
+1. Stop the project: `make down`
+2. Edit `srcs/.env`
+3. Clean everything: `make fclean` (the database must be recreated with the new credentials)
+4. Restart: `make`
+
+## Full cleanup
+
+```bash
+make fclean
+```
+
+**Warning:** this deletes all the data (database and website files).
+
+## Basic checks
+
+**Running services:**
+```bash
+docker ps
+# Should list 3 containers: nginx, wordpress, mariadb
+```
+
+**Volumes:**
 ```bash
 docker volume ls
 docker volume inspect srcs_mariadb_data
 docker volume inspect srcs_wordpress_data
+```
